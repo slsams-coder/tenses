@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive English Tenses Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF8;
+            color: #4A4A4A;
+        }
+        .nav-button {
+            transition: all 0.3s ease;
+        }
+        .nav-button.active {
+            background-color: #A67B5B;
+            color: #FFFFFF;
+            font-weight: 600;
+        }
+        .tense-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .tense-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .tense-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+        }
+        .tense-details.open {
+            max-height: 500px;
+        }
+        .quiz-option {
+            transition: all 0.2s ease;
+        }
+        .quiz-option:hover {
+            background-color: #EFE8E1;
+        }
+        .quiz-option.correct {
+            background-color: #D1FAE5;
+            border-color: #34D399;
+        }
+        .quiz-option.incorrect {
+            background-color: #FEE2E2;
+            border-color: #F87171;
+        }
+        .quiz-button-group .quiz-button {
+            transition: all 0.2s ease;
+        }
+        .quiz-button-group .quiz-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        /* --- Timeline Specific Styles --- */
+        .timeline-container-custom {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            width: 100%;
+            position: relative;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .timeline-section-custom {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding: 2rem;
+        }
+        .timeline-past { background-color: #E8E5CE; }
+        .timeline-present { background-color: #C8D7DD; }
+        .timeline-future { background-color: #D6AFA4; }
+
+        .timeline-header {
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .timeline-past .timeline-header { color: #8F8B6D; }
+        .timeline-present .timeline-header { color: #5B8292; }
+        .timeline-future .timeline-header { color: #9A6E63; }
+
+        .timeline-label-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        .timeline-label-container .label {
+            text-align: left;
+            position: relative;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 1rem;
+            border-radius: 0.75rem;
+        }
+        .label .tense-title {
+            font-weight: 700;
+            font-size: 1.125rem;
+            color: #4A4A4A;
+        }
+        .tense-details-display {
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+        }
+        .tense-details-display p {
+            margin-bottom: 0.5rem;
+        }
+
+        /* --- Flashcard Specific Styles --- */
+        .card-container {
+            perspective: 1000px;
+        }
+        .flashcard {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+        .flashcard-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 1rem;
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .flashcard-front {
+            background-color: #A67B5B;
+            color: white;
+            padding: 2rem;
+        }
+        .flashcard-back {
+            background-color: white;
+            color: #4A4A4A;
+            transform: rotateY(180deg);
+            padding: 2rem;
+            text-align: center;
+        }
+        .flashcard-back h4 {
+            font-weight: 600;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .flashcard-back p {
+            margin-bottom: 0.5rem;
+        }
+        .flashcard-back .example {
+            font-style: italic;
+            color: #6B7280;
+        }
+        .flashcard-back code {
+            font-weight: bold;
+        }
+        .flashcard-front p {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 md:p-8">
+
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-[#A67B5B]">Interactive English Tenses Guide</h1>
+            <p class="mt-2 text-lg text-gray-600">Explore, Visualize, and Practice the 12 English Tenses</p>
+        </header>
+
+        <nav class="flex justify-center bg-[#EFE8E1] rounded-full p-2 mb-10 max-w-lg mx-auto shadow-sm">
+            <button id="nav-explorer" class="nav-button w-1/4 py-2 px-4 rounded-full text-sm md:text-base font-medium text-gray-700">Grammar Breakdown</button>
+            <button id="nav-timeline" class="nav-button w-1/4 py-2 px-4 rounded-full text-sm md:text-base font-medium text-gray-700">Chronological View</button>
+            <button id="nav-flashcards" class="nav-button w-1/4 py-2 px-4 rounded-full text-sm md:text-base font-medium text-gray-700 active">Flashcards</button>
+            <button id="nav-quiz" class="nav-button w-1/4 py-2 px-4 rounded-full text-sm md:text-base font-medium text-gray-700">Quiz</button>
+        </nav>
+
+        <main>
+            <section id="explorer-section" class="hidden">
+                <div class="text-center mb-10 max-w-3xl mx-auto">
+                    <h2 class="text-3xl font-bold text-gray-800">Tense Grammar Breakdown</h2>
+                    <p class="mt-2 text-gray-600">
+                        This section provides a detailed breakdown of each English tense. Click on any card to reveal its uses, structure, and common keywords. This is your foundation for mastering the rules of each tense.
+                    </p>
+                </div>
+                <div id="tenses-grid" class="space-y-8"></div>
+            </section>
+
+            <section id="timeline-section" class="hidden">
+                 <div class="text-center mb-10 max-w-3xl mx-auto">
+                    <h2 class="text-3xl font-bold text-gray-800">Chronological View</h2>
+                    <p class="mt-2 text-gray-600">
+                        This timeline visualizes how all 12 tenses relate to the Past, Present, and Future. All details are displayed for easy reading.
+                    </p>
+                </div>
+                 <div class="timeline-container-custom">
+                    <!-- Past Section -->
+                    <div class="timeline-section-custom timeline-past">
+                        <h3 class="timeline-header">Past</h3>
+                        <div class="timeline-label-container">
+                            <div class="label">
+                                <span class="tense-title">Past Perfect Continuous</span>
+                                <div class="tense-details-display">
+                                    <p class="text-sm"><strong>Use:</strong> Action with a duration, completed before another past event.</p>
+                                    <p class="text-sm"><strong>Example:</strong> I had been going to school.</p>
+                                </div>
+                            </div>
+                            <div class="label">
+                                <span class="tense-title">Past Perfect</span>
+                                <div class="tense-details-display">
+                                    <p class="text-sm"><strong>Use:</strong> Action completed before another past action.</p>
+                                    <p class="text-sm"><strong>Example:</strong> I had gone to school.</p>
+                                </div>
+                            </div>
+                            <div class="label">
+                                <span class="tense-title">Past Continuous</span>
+                                <div class="tense-details-display">
+                                    <p class="text-sm"><strong>Use:</strong> Action in progress at a specific past time.</p>
+                                    <p class="text-sm"><strong>Example:</strong> I was going to school.</p>
+                                </div>
+                            </div>
+                            <div class="label">
+                                <span class="tense-title">Past Simple</span>
+                                <div class="tense-details-display">
+                                    <p class="text-sm"><strong>Use:</strong> Completed action at a specific past time.</p>
+                                    <p class="text-sm"><strong>Example:</strong> I went to school.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Present Section -->
+                    <div class="timeline-section-custom timeline-present">
+                        <h3 class="timeline-header">Present</h3>
+                        <div class="timeline-label-container">
+                             <div class="label">
+                                <span class="tense-title">Present Perfect Continuous</span>
+                                <div class="tense-details-display">
+                                    <p class="text-sm"><strong>Use:</strong> Action with a duration, continuing until now.</p>
+                                    <p class="text-sm"><strong>Example:</strong> I have been going to school.</p>
+                                </div>
+                            </div>
+                            <div class="label">
+                                <span class="tense-title">Present Perfect</span>
+                                <div class="tense-details-display">
+                                    <p class="text-sm"><strong>Use:</strong> Action started in the past with a present result.</p>
+                                    <p class="text-sm"><strong>Example:</strong> I have been to school.</p>
+                                </div>
+                            </div>
+                            <div class="label">
+                                <span class="tense-title">Present Continuous</span>
+                                <div class="tense-details-display">
+                                    <p class="text-sm"><strong>Use:</strong> Action happening at the moment of speaking.</p>
+                                    <p class="text-sm"><strong>Example:</strong> I am going to school.</p>
+                                </div>
+                            </div>
+                            <div class="label">
+                                <span class="tense-title">Present Simple</span>
+                                <div class="tense-details-display">
+                                    <p class="text-sm"><strong>Use:</strong> Habits, routines, or general truths.</p>
+                                    <p class="text-sm"><strong>Example:</strong> I go to school.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Future Section -->
+                    <div class="timeline-section-custom timeline-future">
+                        <h3 class="timeline-header">Future</h3>
+                        <div class="timeline-label-container">
+                            <div class="label">
+                                <span class="tense-title">Future Perfect Continuous</span>
+                                <div class="tense-details-display">
+                                    <p class="text-sm"><strong>Use:</strong> Action with a duration, completed before a future time.</p>
+                                    <p class="text-sm"><strong>Example:</strong> I will have been going to school.</p>
+                                </div>
+                            </div>
+                            <div class="label">
+                                <span class="tense-title">Future Perfect</span>
+                                <div class="tense-details-display">
+                                    <p class="text-sm"><strong>Use:</strong> Action completed before a specific future time.</p>
+                                    <p class="text-sm"><strong>Example:</strong> I will have gone to school.</p>
+                                </div>
+                            </div>
+                            <div class="label">
+                                <span class="tense-title">Future Continuous</span>
+                                <div class="tense-details-display">
+                                    <p class="text-sm"><strong>Use:</strong> Action that will be in progress at a future time.</p>
+                                    <p class="text-sm"><strong>Example:</strong> I will be going to school.</p>
+                                </div>
+                            </div>
+                            <div class="label">
+                                <span class="tense-title">Future Simple</span>
+                                <div class="tense-details-display">
+                                    <p class="text-sm"><strong>Use:</strong> Predictions or spontaneous decisions.</p>
+                                    <p class="text-sm"><strong>Example:</strong> I will go to school.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="flashcards-section">
+                <div class="text-center mb-10 max-w-3xl mx-auto">
+                    <h2 class="text-3xl font-bold text-gray-800">Flashcards</h2>
+                    <p class="mt-2 text-gray-600">
+                        Test your memory on tenses, examples, and structures! Use these cards to practice before you take the quiz.
+                    </p>
+                </div>
+                <div class="max-w-md mx-auto card-container">
+                    <div id="flashcard" class="flashcard">
+                        <div id="flashcard-front" class="flashcard-face flashcard-front">
+                            <p id="flashcard-front-text"></p>
+                        </div>
+                        <div id="flashcard-back" class="flashcard-face flashcard-back">
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-8 flex justify-center space-x-4">
+                    <button id="flip-btn" class="bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-full hover:bg-gray-400 transition-colors">Flip Card</button>
+                    <button id="next-btn-flashcards" class="bg-[#A67B5B] text-white font-bold py-2 px-6 rounded-full hover:bg-opacity-90 transition-colors">Next Card</button>
+                </div>
+            </section>
+
+            <section id="quiz-section" class="hidden">
+                <div class="text-center mb-10 max-w-3xl mx-auto">
+                    <h2 class="text-3xl font-bold text-gray-800">Practice Quiz</h2>
+                    <p class="mt-2 text-gray-600">
+                        Ready to test your knowledge? This quiz will present you with sentences where you need to choose the correct tense. Read each question carefully and select the best option.
+                    </p>
+                </div>
+                <div id="quiz-container" class="max-w-2xl mx-auto bg-white p-6 md:p-8 rounded-2xl shadow-lg">
+                      <div id="quiz-content">
+                        <div class="flex justify-between items-center mb-4">
+                            <p id="question-counter" class="text-sm font-medium text-gray-500"></p>
+                            <p id="score-counter" class="text-sm font-medium text-[#A67B5B]"></p>
+                        </div>
+                        <p id="question-text" class="text-lg md:text-xl font-semibold text-gray-800 mb-6"></p>
+                        <div id="answer-options" class="space-y-3"></div>
+                        <div id="feedback-area" class="mt-6 text-sm"></div>
+                        <div class="mt-6 flex justify-between quiz-button-group">
+                            <button id="prev-btn" class="quiz-button bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-full hover:bg-gray-400 transition-colors" disabled>Previous</button>
+                            <button id="next-btn" class="quiz-button bg-[#A67B5B] text-white font-bold py-2 px-4 rounded-full hover:bg-opacity-90 transition-colors">Next</button>
+                        </div>
+                    </div>
+                    <div id="quiz-results" class="hidden text-center">
+                        <h3 class="text-2xl font-bold text-gray-800">Quiz Complete!</h3>
+                        <p id="final-score" class="text-4xl font-bold my-4 text-[#A67B5B]"></p>
+                        <p id="results-message" class="text-gray-600 mb-6"></p>
+                        <button id="restart-quiz-btn" class="bg-[#A67B5B] text-white font-bold py-2 px-6 rounded-full hover:bg-opacity-90 transition-colors">
+                            Try Again
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+<script>
+    const tensesData = {
+        "Present Tenses": [
+            { name: "Simple Present", use: "Habits, routines, general truths, and scheduled events.", keywords: "`always`, `every day`, `often`", structure: "`verb` or `verb + s/es`" },
+            { name: "Present Continuous", use: "Actions happening at the moment of speaking or temporary actions.", keywords: "`now`, `at the moment`, `Look!`", structure: "`am/is/are + verb + -ing`" },
+            { name: "Present Perfect", use: "An action started in the past with a result in the present.", keywords: "`since`, `for`, `just`, `already`", structure: "`has/have + past participle`" },
+            { name: "Present Perfect Continuous", use: "An action that began in the past, continues to the present, and emphasizes duration.", keywords: "`for two hours`, `since morning`, `all day`", structure: "`has/have + been + verb + -ing`" }
+        ],
+        "Past Tenses": [
+            { name: "Simple Past", use: "Completed actions at a specific time in the past.", keywords: "`yesterday`, `last week`, `in 2010`", structure: "`verb + ed` (or irregular form)" },
+            { name: "Past Continuous", use: "An ongoing action in the past that was interrupted by a shorter action.", keywords: "`while`, `when`", structure: "`was/were + verb + -ing`" },
+            { name: "Past Perfect", use: "A past action that happened before another past action.", keywords: "`before`, `by the time`", structure: "`had + past participle`" },
+            { name: "Past Perfect Continuous", use: "A continuous action with a specific duration that was completed before another past event.", keywords: "`for five hours`, `since then`", structure: "`had + been + verb + -ing`" }
+        ],
+        "Future Tenses": [
+            { name: "Simple Future", use: "Spontaneous decisions, predictions, and promises.", keywords: "`I think`, `I guess`, `probably`", structure: "`will + verb` or `am/is/are going to + verb`" },
+            { name: "Future Continuous", use: "An action that will be in progress at a specific time in the future.", keywords: "`this time tomorrow`, `at 8 PM`", structure: "`will be + verb + -ing`" },
+            { name: "Future Perfect", use: "An action that will be completed by a certain time in the future.", keywords: "`by Friday`, `by the end of the year`", structure: "`will have + past participle`" },
+            { name: "Future Perfect Continuous", use: "A continuous action that will have a specific duration by a future point.", keywords: "`for three years`, `by next month`", structure: "`will have been + verb + -ing`" }
+        ]
+    };
+
+    const quizData = [
+        { question: "Water _______ at 100 degrees Celsius at sea level.", options: [ { text: "boils", isCorrect: true, rationale: "This option correctly uses the simple present tense for a general scientific fact." }, { text: "is boiling", isCorrect: false, rationale: "This tense is used for an action happening right now, not for a general truth." }, { text: "has boiled", isCorrect: false, rationale: "This tense suggests a recently completed action with a result in the present, which doesn't fit the context of a universal fact." }, { text: "will boil", isCorrect: false, rationale: "This tense is for future actions, but the sentence describes a constant, unchanging fact." } ] },
+        { question: "Look! The children _______ in the garden.", options: [ { text: "played", isCorrect: false, rationale: "This describes a completed action in the past, but the word 'Look!' indicates something is happening now." }, { text: "are playing", isCorrect: true, rationale: "This tense is used for an action that is happening at the moment of speaking, which fits the context 'Look!'." }, { text: "play", isCorrect: false, rationale: "This is used for habits or routines, not for an action happening at this specific moment." }, { text: "have been playing", isCorrect: false, rationale: "This tense emphasizes the duration of an action that started in the past and is still continuing, which is not the main focus here." } ] },
+        { question: "I can't find my keys. I think I _______ them.", options: [ { text: "lost", isCorrect: false, rationale: "While this tense indicates the action happened in the past, it doesn't connect it to the present situation as strongly." }, { text: "was losing", isCorrect: false, rationale: "This tense describes an action in progress in the past, which doesn't fit the context of the result being in the present." }, { text: "have lost", isCorrect: true, rationale: "This tense connects a past action (losing the keys) with a present result (not being able to find them)." }, { text: "had lost", isCorrect: false, rationale: "This tense is used when one past action happened before another past action, which is not the case here." } ] },
+        { question: "She _______ for this company for five years, and she still enjoys her job.", options: [ { text: "works", isCorrect: false, rationale: "This tense describes a current habit but doesn't emphasize the duration of the action from the past until now." }, { text: "has been working", isCorrect: true, rationale: "This tense correctly emphasizes the continuous nature of an action that started in the past and continues into the present." }, { text: "worked", isCorrect: false, rationale: "This tense indicates a completed action in the past, but the context says she still works there." }, { text: "had been working", isCorrect: false, rationale: "This tense describes a continuous action that was completed before another past event, which doesn't fit the present context." } ] },
+        { question: "My family _______ to the beach last summer.", options: [ { text: "went", isCorrect: true, rationale: "This is the correct simple past form for a completed action that happened at a specific time in the past ('last summer')." }, { text: "has gone", isCorrect: false, rationale: "This tense is used for past actions with present relevance, often without a specific past time marker." }, { text: "was going", isCorrect: false, rationale: "This tense describes an action in progress at a point in the past, not a completed trip." }, { text: "goes", isCorrect: false, rationale: "This tense is for present habits, not for a specific event that happened in the past." } ] },
+        { question: "He _______ a book when the phone rang.", options: [ { text: "read", isCorrect: false, rationale: "This would mean he read the entire book at the moment the phone rang, which is illogical." }, { text: "has read", isCorrect: false, rationale: "This tense connects a past action to the present, but the sentence is set entirely in the past." }, { text: "was reading", isCorrect: true, rationale: "This tense correctly shows an ongoing action in the past ('reading') that was interrupted by another past action ('rang')." }, { text: "had read", isCorrect: false, rationale: "This implies he finished reading before the phone rang, not that he was in the middle of it." } ] },
+        { question: "By the time we arrived at the cinema, the movie _______.", options: [ { text: "started", isCorrect: false, rationale: "Using the simple past here would suggest the events happened one after another, not that one happened before the other." }, { text: "was starting", isCorrect: false, rationale: "This implies the movie began at the exact moment of arrival, not before." }, { text: "had started", isCorrect: true, rationale: "This tense is correctly used to show that one past action (the movie starting) was completed before another past action (arriving)." }, { text: "has started", isCorrect: false, rationale: "This tense connects a past event to the present, but the entire context of the sentence is in the past." } ] },
+        { question: "I feel a bit tired. I think I _______ a short nap.", options: [ { text: "take", isCorrect: false, rationale: "This tense is for habits, not for a decision made at the moment of speaking." }, { text: "am going to take", isCorrect: false, rationale: "This is used for plans made before the moment of speaking, whereas this seems like a spontaneous decision." }, { text: "am taking", isCorrect: false, rationale: "This tense is for fixed future arrangements, not for a decision made on the spot." }, { text: "will take", isCorrect: true, rationale: "This tense is often used for a spontaneous decision or intention made at the moment of speaking." } ] },
+        { question: "This time tomorrow, I _______ on a beach in Spain.", options: [ { text: "will be lying", isCorrect: true, rationale: "This tense correctly describes an action that will be in progress at a specific point in the future." }, { text: "will lie", isCorrect: false, rationale: "This tense describes a future action in general, but not one that will be specifically in progress at 'this time tomorrow'." }, { text: "am lying", isCorrect: false, rationale: "This tense is for actions happening now or fixed arrangements, not for an action in progress at a future time." }, { text: "lie", isCorrect: false, rationale: "This is the simple present tense and does not refer to a future action." } ] },
+        { question: "By 2030, scientists _______ a cure for the disease.", options: [ { text: "will find", isCorrect: false, rationale: "This indicates the action will happen in the future but doesn't emphasize its completion by a certain time." }, { text: "are finding", isCorrect: false, rationale: "This tense is for actions happening now and cannot be used for a future action in this context." }, { text: "will have found", isCorrect: true, rationale: "This tense is correctly used to show that an action will be completed by a specific time in the future." }, { text: "will be finding", isCorrect: false, rationale: "This suggests the action will be in progress in 2030, not completed by then." } ] },
+        { question: "I _______ to a meeting when I received your call.", options: [ { text: "was walking", isCorrect: true, rationale: "The past continuous tense is used here to show an action that was in progress ('walking') when another action interrupted it ('received your call')." }, { text: "walked", isCorrect: false, rationale: "The simple past tense would imply the action was completed, not in progress when the phone rang." }, { text: "had walked", isCorrect: false, rationale: "The past perfect tense indicates an action completed before another past action, which is not the case here." }, { text: "am walking", isCorrect: false, rationale: "The present continuous tense refers to an action happening now, not in the past." } ] },
+        { question: "She _______ her homework before she went out to play.", options: [ { text: "finished", isCorrect: false, rationale: "The simple past tense suggests the events happened one after another, but the sentence structure ('before she went out') indicates one action was completed before the other." }, { text: "was finishing", isCorrect: false, rationale: "The past continuous tense would imply an action in progress that was interrupted, which doesn't fit the context." }, { text: "had finished", isCorrect: true, rationale: "The past perfect tense is correctly used to show that the action of finishing her homework happened before the action of going out to play." }, { text: "has finished", isCorrect: false, rationale: "The present perfect tense connects a past action to the present, but the context of the sentence is entirely in the past." } ] },
+        { question: "They _______ for three hours before they took a break.", options: [ { text: "worked", isCorrect: false, rationale: "The simple past tense does not emphasize the duration of the action." }, { text: "were working", isCorrect: false, rationale: "The past continuous tense would indicate an action in progress, but the phrase 'for three hours' emphasizes duration before the break." }, { text: "had worked", isCorrect: false, rationale: "The past perfect tense is used for a completed action before another past action, but 'had been working' is better for emphasizing duration." }, { text: "had been working", isCorrect: true, rationale: "The past perfect continuous tense is used to emphasize the duration of an action that was in progress and completed before another past action." } ] },
+        { question: "I'm sure she _______ the exam. She's studied all week.", options: [ { text: "will pass", isCorrect: true, rationale: "This simple future tense is used here to make a prediction based on present evidence (she's studied all week)." }, { text: "is passing", isCorrect: false, rationale: "The present continuous tense is for actions happening now or fixed arrangements, not for predictions." }, { text: "passes", isCorrect: false, rationale: "The simple present tense is for habits or facts, not future predictions." }, { text: "is going to pass", isCorrect: false, rationale: "This form of the future tense is used for a prediction based on visible evidence, but 'I think' makes 'will pass' more suitable." } ] },
+        { question: "By this time next year, I _______ my degree.", options: [ { text: "will finish", isCorrect: false, rationale: "The simple future tense indicates a future action but doesn't emphasize its completion by a certain time." }, { text: "will be finishing", isCorrect: false, rationale: "The future continuous tense suggests the action will be in progress, but the sentence implies the action will be completed by then." }, { text: "will have finished", isCorrect: true, rationale: "The future perfect tense correctly indicates an action that will be completed at or before a specific time in the future." }, { text: "am finishing", isCorrect: false, rationale: "The present continuous is for current or scheduled actions, not for future actions completed by a specific time." } ] },
+        { question: "The sun always _______ in the east.", options: [ { text: "rises", isCorrect: true, rationale: "The simple present tense is correctly used to state a general, unchanging truth or fact." }, { text: "rose", isCorrect: false, rationale: "The simple past tense refers to an action that happened in the past and is not a universal truth." }, { text: "will rise", isCorrect: false, rationale: "The simple future tense indicates a future action, but the sentence describes a constant fact." }, { text: "has risen", isCorrect: false, rationale: "The present perfect tense suggests a recent action with a present result, not a universal truth." } ] },
+        { question: "I _______ to London many times.", options: [ { text: "have been", isCorrect: true, rationale: "The present perfect tense is used to describe an experience that happened at an unspecified time in the past and has relevance to the present." }, { text: "was", isCorrect: false, rationale: "The simple past tense refers to a specific time or a single completed event, which does not fit the context of 'many times'." }, { text: "go", isCorrect: false, rationale: "The simple present tense describes a habitual action, but the sentence refers to past experience." }, { text: "am going", isCorrect: false, rationale: "The present continuous tense is for an action happening now or a scheduled future event." } ] },
+        { question: "We _______ dinner when the lights went out.", options: [ { text: "were eating", isCorrect: true, rationale: "The past continuous tense is used to describe an ongoing action that was interrupted by a sudden, shorter action." }, { text: "ate", isCorrect: false, rationale: "The simple past tense would imply that eating and the lights going out happened at the same time, not one interrupting the other." }, { text: "have eaten", isCorrect: false, rationale: "The present perfect tense is for past actions with present relevance, but the sentence is set entirely in the past." }, { text: "had eaten", isCorrect: false, rationale: "The past perfect tense would mean that we finished eating before the lights went out." } ] },
+        { question: "He _______ his car since she bought it last year.", options: [ { text: "has been driving", isCorrect: true, rationale: "The present perfect continuous tense emphasizes the duration of the action ('since last year') and that it continues into the present." }, { text: "is driving", isCorrect: false, rationale: "The present continuous is for an action happening at the moment, not with duration from the past." }, { text: "drove", isCorrect: false, rationale: "The simple past tense indicates a single, completed action, without connection to the present state." }, { text: "had driven", isCorrect: false, rationale: "The past perfect tense refers to an action completed before another past action, which is not the case here." } ] },
+        { question: "By this time tomorrow, they _______ their final exam.", options: [ { text: "will be taking", isCorrect: false, rationale: "The future continuous tense suggests the action will be in progress, but the sentence implies the action will be completed by then." }, { text: "will take", isCorrect: false, rationale: "The simple future tense indicates a future action but doesn't emphasize its completion by a specific time." }, { text: "will have taken", isCorrect: true, rationale: "The future perfect tense correctly indicates an action that will be completed by a specific time in the future ('by this time tomorrow')." }, { text: "are taking", isCorrect: false, rationale: "The present continuous is for current or scheduled actions, not for actions completed by a future time." } ] },
+        { question: "I think the stock market _______ tomorrow.", options: [ { text: "will fall", isCorrect: true, rationale: "The simple future tense is used to make a prediction based on a personal opinion or thought." }, { text: "is falling", isCorrect: false, rationale: "The present continuous tense is for an action happening now, not a future prediction." }, { text: "falls", isCorrect: false, rationale: "The simple present tense is for habits or facts, not future predictions." }, { text: "is going to fall", isCorrect: false, rationale: "This form of the future tense is used for a prediction based on visible evidence, but 'I think' makes 'will fall' more suitable." } ] },
+        { question: "We _______ a new car next week.", options: [ { text: "are buying", isCorrect: true, rationale: "The present continuous tense is often used for a definite, scheduled arrangement in the near future." }, { text: "buy", isCorrect: false, rationale: "The simple present tense is for fixed schedules, not personal plans." }, { text: "will buy", isCorrect: false, rationale: "The simple future tense can be used, but 'are buying' implies a more definite plan." }, { text: "will be buying", isCorrect: false, rationale: "The future continuous would suggest the action will be in progress at a specific time, not a definite plan." } ] },
+        { question: "She _______ for three hours when I finally arrived.", options: [ { text: "had been waiting", isCorrect: true, rationale: "The past perfect continuous tense emphasizes the duration ('for three hours') of an action that was in progress and completed just before another past action ('arrived')." }, { text: "was waiting", isCorrect: false, rationale: "The past continuous would suggest she was still waiting when you arrived, which is not what 'had been waiting' implies." }, { text: "waited", isCorrect: false, rationale: "The simple past tense doesn't emphasize the duration of the action." }, { text: "has been waiting", isCorrect: false, rationale: "The present perfect continuous connects a past action to the present, but the context is in the past." } ] },
+        { question: "They _______ dinner when the phone rang.", options: [ { text: "ate", isCorrect: false, rationale: "The simple past tense doesn't show the interruption." }, { text: "had eaten", isCorrect: false, rationale: "This implies the eating was finished before the phone rang." }, { text: "were eating", isCorrect: true, rationale: "The past continuous tense is used for an ongoing action that was interrupted by a specific event ('the phone rang')." }, { text: "will be eating", isCorrect: false, rationale: "This refers to a future action, which doesn't fit the past context." } ] },
+        { question: "By the time you get home, I _______ all the housework.", options: [ { text: "will do", isCorrect: false, rationale: "The simple future tense doesn't emphasize the completion by a specific time." }, { text: "am doing", isCorrect: false, rationale: "The present continuous tense is for an action happening now, not a future event." }, { text: "will be doing", isCorrect: false, rationale: "This suggests the action will be in progress, but the sentence implies it will be completed." }, { text: "will have done", isCorrect: true, rationale: "The future perfect tense correctly shows an action that will be completed by a certain future time ('by the time you get home')." } ] },
+        { question: "How long _______ before you went to the hospital?", options: [ { text: "were you coughing", isCorrect: false, rationale: "The past continuous doesn't fully capture the duration before the second event." }, { text: "had you been coughing", isCorrect: true, rationale: "The past perfect continuous tense is used to ask about the duration of a continuous action that was completed before another past action." }, { text: "did you cough", isCorrect: false, rationale: "The simple past tense is for a single, completed action, not a continuous one." }, { text: "have you been coughing", isCorrect: false, rationale: "The present perfect continuous connects a past action to the present, but the context is in the past." } ] },
+        { question: "I _______ that movie before, so I didn't want to see it again.", options: [ { text: "had seen", isCorrect: true, rationale: "The past perfect tense correctly shows an action ('had seen') that happened before another past action ('didn't want to see')." }, { text: "have seen", isCorrect: false, rationale: "The present perfect connects a past action to the present, which doesn't fit the past context." }, { text: "saw", isCorrect: false, rationale: "The simple past doesn't clearly show that one event occurred before the other." }, { text: "was seeing", isCorrect: false, rationale: "The past continuous is for an ongoing action that was interrupted." } ] },
+        { question: "The baby _______ all night, so his parents are exhausted.", options: [ { text: "cried", isCorrect: false, rationale: "The simple past tense is for a completed action, but the parents being exhausted now suggests a continuous action." }, { text: "was crying", isCorrect: false, rationale: "The past continuous would work, but 'has been crying' better connects the past action to the present result (the parents' exhaustion)." }, { text: "has been crying", isCorrect: true, rationale: "The present perfect continuous tense emphasizes the duration of a past action ('all night') that has a visible result in the present ('parents are exhausted')." }, { text: "had been crying", isCorrect: false, rationale: "The past perfect continuous tense refers to an action that was completed before another past event." } ] },
+        { question: "We _______ on the project since Monday.", options: [ { text: "worked", isCorrect: false, rationale: "The simple past tense does not express a connection to the present." }, { text: "are working", isCorrect: false, rationale: "The present continuous tense doesn't include the duration from the past." }, { text: "have been working", isCorrect: true, rationale: "The present perfect continuous tense correctly shows an action that started in the past ('since Monday') and is still ongoing." }, { text: "had worked", isCorrect: false, rationale: "The past perfect tense is used for a completed action before another past action." } ] },
+        { question: "They _______ their new house by the end of next year.", options: [ { text: "will have built", isCorrect: true, rationale: "The future perfect tense correctly indicates an action that will be completed by a specific time in the future." }, { text: "will build", isCorrect: false, rationale: "The simple future tense indicates a future action but doesn't emphasize its completion by a certain time." }, { text: "are building", isCorrect: false, rationale: "The present continuous is for current or scheduled actions, not for actions completed by a future time." }, { text: "will be building", isCorrect: false, rationale: "The future continuous suggests the action will be in progress, but the sentence implies the action will be completed." } ] }
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const tensesGrid = document.getElementById('tenses-grid');
+        const navButtons = document.querySelectorAll('.nav-button');
+        const sections = document.querySelectorAll('main section');
+
+        const quizContainer = document.getElementById('quiz-container');
+        const quizContent = document.getElementById('quiz-content');
+        const quizResults = document.getElementById('quiz-results');
+        const questionText = document.getElementById('question-text');
+        const answerOptions = document.getElementById('answer-options');
+        const feedbackArea = document.getElementById('feedback-area');
+        const nextBtn = document.getElementById('next-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const restartQuizBtn = document.getElementById('restart-quiz-btn');
+        const questionCounter = document.getElementById('question-counter');
+        const scoreCounter = document.getElementById('score-counter');
+        const finalScore = document.getElementById('final-score');
+        const resultsMessage = document.getElementById('results-message');
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let userAnswers = new Array(quizData.length).fill(null);
+
+        // Flashcards specific variables
+        const flashcardElement = document.getElementById('flashcard');
+        const flashcardFront = document.getElementById('flashcard-front-text');
+        const flashcardBack = document.getElementById('flashcard-back');
+        const flipBtn = document.getElementById('flip-btn');
+        const nextFlashcardBtn = document.getElementById('next-btn-flashcards');
+
+        const allTenses = Object.values(tensesData).flat();
+        let allFlashcards = [];
+        let flashcardIndex = 0;
+
+        function generateFlashcards() {
+            // Type 1: Tense Name -> Details
+            const basicCards = allTenses.map(tense => ({ type: 'basic', data: tense }));
+
+            // Type 2: Example Sentence -> Tense Name
+            const exampleToTenseCards = [
+                { type: 'exampleToTense', question: 'What tense is this sentence? "She had been living there for years before she moved."', answer: 'Past Perfect Continuous' },
+                { type: 'exampleToTense', question: 'What tense is this sentence? "I will call you tomorrow."', answer: 'Simple Future' },
+                { type: 'exampleToTense', question: 'What tense is this sentence? "The sun rises in the east."', answer: 'Simple Present' },
+                { type: 'exampleToTense', question: 'What tense is this sentence? "We are eating dinner right now."', answer: 'Present Continuous' },
+                { type: 'exampleToTense', question: 'What tense is this sentence? "He had finished his work before the deadline."', answer: 'Past Perfect' },
+                { type: 'exampleToTense', question: 'What tense is this sentence? "By next month, I will have been working here for a year."', answer: 'Future Perfect Continuous' },
+                { type: 'exampleToTense', question: 'What tense is this sentence? "They have just arrived."', answer: 'Present Perfect' },
+                { type: 'exampleToTense', question: 'What tense is this sentence? "She was sleeping when the storm began."', answer: 'Past Continuous' },
+                { type: 'exampleToTense', question: 'What tense is this sentence? "By the time he graduates, he will have been studying for five years."', answer: 'Future Perfect Continuous' },
+                { type: 'exampleToTense', question: 'What tense is this sentence? "We will be flying to Paris this time next week."', answer: 'Future Continuous' },
+                { type: 'exampleToTense', question: 'What tense is this sentence? "I have already seen that movie."', answer: 'Present Perfect' },
+            ];
+
+            // Type 3: Structure -> Tense Name
+            const structureToTenseCards = [
+                { type: 'structureToTense', question: 'Which tense has the structure "am/is/are + verb + -ing"?', answer: 'Present Continuous' },
+                { type: 'structureToTense', question: 'Which tense has the structure "will have + past participle"?', answer: 'Future Perfect' },
+                { type: 'structureToTense', question: 'Which tense has the structure "had + past participle"?', answer: 'Past Perfect' },
+                { type: 'structureToTense', question: 'Which tense has the structure "verb + s/es"?', answer: 'Simple Present' },
+                { type: 'structureToTense', question: 'Which tense has the structure "will have been + verb + -ing"?', answer: 'Future Perfect Continuous' },
+                { type: 'structureToTense', question: 'Which tense has the structure "was/were + verb + -ing"?', answer: 'Past Continuous' },
+                { type: 'structureToTense', question: 'Which tense has the structure "will + verb"?', answer: 'Simple Future' },
+                { type: 'structureToTense', question: 'Which tense has the structure "has/have + past participle"?', answer: 'Present Perfect' },
+                { type: 'structureToTense', question: 'Which tense has the structure "had + been + verb + -ing"?', answer: 'Past Perfect Continuous' },
+            ];
+            
+            // Type 4: Usage -> Tense Name
+            const usageToTenseCards = [
+                { type: 'usageToTense', question: 'Which tense is used for a completed action at a specific time in the past?', answer: 'Simple Past' },
+                { type: 'usageToTense', question: 'Which tense is used for habits, routines, and general truths?', answer: 'Simple Present' },
+                { type: 'usageToTense', question: 'Which tense is used for an action that will be completed by a specific time in the future?', answer: 'Future Perfect' },
+                { type: 'usageToTense', question: 'Which tense is used for an action that started in the past and continues to the present, emphasizing duration?', answer: 'Present Perfect Continuous' },
+                { type: 'usageToTense', question: 'Which tense is used for an action in progress at a specific time in the past?', answer: 'Past Continuous' },
+                { type: 'usageToTense', question: 'Which tense is used for a past action that happened before another past action?', answer: 'Past Perfect' },
+                { type: 'usageToTense', question: 'Which tense is used for an action that will be in progress at a specific time in the future?', answer: 'Future Continuous' },
+            ];
+
+            // Combine all flashcard types
+            allFlashcards = [...basicCards, ...exampleToTenseCards, ...structureToTenseCards, ...usageToTenseCards];
+            
+            // Shuffle the combined array
+            allFlashcards.sort(() => Math.random() - 0.5);
+        }
+
+        function showSection(sectionId) {
+            sections.forEach(section => {
+                section.classList.add('hidden');
+            });
+            document.getElementById(sectionId).classList.remove('hidden');
+        }
+
+        function setActiveNavButton(buttonId) {
+            navButtons.forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(buttonId).classList.add('active');
+        }
+
+        navButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const sectionId = button.id.replace('nav-', '') + '-section';
+                showSection(sectionId);
+                setActiveNavButton(button.id);
+                if (sectionId === 'quiz-section') {
+                    startQuiz();
+                }
+                if (sectionId === 'flashcards-section') {
+                    startFlashcards();
+                }
+            });
+        });
+
+        function setupExplorer() {
+            tensesGrid.innerHTML = '';
+            for (const group in tensesData) {
+                const groupContainer = document.createElement('div');
+                groupContainer.innerHTML = `<h3 class="text-2xl font-bold text-gray-800 mb-4 border-b-2 border-[#A67B5B] pb-2">${group}</h3>`;
+                const grid = document.createElement('div');
+                grid.className = 'grid grid-cols-1 md:grid-cols-2 gap-6';
+                tensesData[group].forEach(tense => {
+                    const card = document.createElement('div');
+                    card.className = 'tense-card bg-white rounded-xl shadow-md p-6 relative';
+                    card.innerHTML = `
+                        <h4 class="text-xl font-bold text-[#A67B5B]">${tense.name}</h4>
+                        <div class="tense-details">
+                            <p class="mt-4 text-sm"><strong class="font-semibold text-gray-700">Use:</strong> ${tense.use}</p>
+                            <p class="mt-2 text-sm"><strong class="font-semibold text-gray-700">Structure:</strong> <code class="bg-gray-100 p-1 rounded text-xs">${tense.structure}</code></p>
+                            <p class="mt-2 text-sm"><strong class="font-semibold text-gray-700">Keywords:</strong> <code class="bg-gray-100 p-1 rounded text-xs">${tense.keywords}</code></p>
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <h5 class="text-sm font-semibold text-gray-700 mb-2">AI-Generated Examples:</h5>
+                                <div id="ai-examples-${tense.name.replace(/\s/g, '-')}" class="text-sm text-gray-600 italic">
+                                    <p>Click below to generate examples.</p>
+                                </div>
+                                <button data-tense="${tense.name}" class="generate-btn bg-[#A67B5B] text-white font-bold py-2 px-4 rounded-full mt-3 text-sm hover:bg-opacity-90 transition-colors w-full">
+                                    ✨ Get AI Examples ✨
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    card.addEventListener('click', (e) => {
+                        // Only toggle details if the click isn't on the button
+                        if (!e.target.closest('.generate-btn')) {
+                            const details = card.querySelector('.tense-details');
+                            details.classList.toggle('open');
+                        }
+                    });
+                    grid.appendChild(card);
+                });
+                groupContainer.appendChild(grid);
+                tensesGrid.appendChild(groupContainer);
+            }
+            // Add event listeners for the new buttons
+            document.querySelectorAll('.generate-btn').forEach(button => {
+                button.addEventListener('click', generateExamples);
+            });
+        }
+
+        async function generateExamples(event) {
+            const button = event.target;
+            const tenseName = button.dataset.tense;
+            const outputDiv = document.getElementById(`ai-examples-${tenseName.replace(/\s/g, '-')}`);
+
+            button.disabled = true;
+            button.textContent = 'Generating...';
+
+            const userQuery = `Generate 3 unique and concise example sentences for the ${tenseName} tense. The sentences should be a single paragraph. Do not include any extra text, just the sentences.`;
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }]
+            };
+
+            let retryCount = 0;
+            const maxRetries = 3;
+            let response;
+
+            while (retryCount < maxRetries) {
+                try {
+                    response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.status === 429) {
+                        const delay = Math.pow(2, retryCount) * 1000;
+                        console.log(`Rate limited. Retrying in ${delay}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        retryCount++;
+                        continue;
+                    }
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    if (text) {
+                        outputDiv.textContent = text.trim();
+                    } else {
+                        outputDiv.textContent = 'Failed to generate examples. Please try again.';
+                    }
+                    break; // Exit the loop on success
+                } catch (error) {
+                    outputDiv.textContent = 'An error occurred. Please try again.';
+                    console.error('Error fetching AI examples:', error);
+                    break;
+                } finally {
+                    button.disabled = false;
+                    button.textContent = '✨ Get AI Examples ✨';
+                }
+            }
+        }
+
+        // Quiz Functions
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers = new Array(quizData.length).fill(null);
+            quizContent.classList.remove('hidden');
+            quizResults.classList.add('hidden');
+            renderQuiz();
+        }
+
+        function renderQuiz() {
+            if (currentQuestionIndex >= quizData.length) {
+                showResults();
+                return;
+            }
+
+            const currentQuestion = quizData[currentQuestionIndex];
+            questionCounter.textContent = `Question ${currentQuestionIndex + 1} of ${quizData.length}`;
+            scoreCounter.textContent = `Score: ${score}`;
+            questionText.textContent = currentQuestion.question;
+            answerOptions.innerHTML = '';
+            feedbackArea.innerHTML = '';
+
+            currentQuestion.options.forEach((option, index) => {
+                const optionButton = document.createElement('button');
+                optionButton.textContent = option.text;
+                optionButton.className = 'quiz-option w-full text-left p-4 rounded-xl border-2 border-gray-200 hover:border-[#A67B5B] focus:outline-none';
+                optionButton.dataset.index = index;
+
+                optionButton.addEventListener('click', handleAnswer);
+
+                answerOptions.appendChild(optionButton);
+            });
+
+            updateNavigationButtons();
+
+            // Restore previous answer if it exists
+            const savedAnswer = userAnswers[currentQuestionIndex];
+            if (savedAnswer !== null) {
+                const selectedOption = answerOptions.querySelector(`[data-index="${savedAnswer.selectedIndex}"]`);
+                if (selectedOption) {
+                    selectedOption.click();
+                }
+            }
+        }
+
+        function handleAnswer(event) {
+            const selectedButton = event.target;
+            const selectedIndex = parseInt(selectedButton.dataset.index);
+            const currentQuestion = quizData[currentQuestionIndex];
+            const selectedOption = currentQuestion.options[selectedIndex];
+
+            // Prevent re-answering
+            Array.from(answerOptions.children).forEach(button => button.disabled = true);
+
+            // Get previous answer state for scoring logic
+            const previousAnswer = userAnswers[currentQuestionIndex];
+            const wasPreviousAnswerCorrect = previousAnswer ? previousAnswer.isCorrect : null;
+
+            const isCurrentAnswerCorrect = selectedOption.isCorrect;
+
+            // Update score based on change in correctness
+            if (isCurrentAnswerCorrect && (!previousAnswer || !wasPreviousAnswerCorrect)) {
+                // Changing from incorrect/unanswered to correct
+                score++;
+            } else if (!isCurrentAnswerCorrect && previousAnswer && wasPreviousAnswerCorrect) {
+                // Changing from correct to incorrect
+                score--;
+            }
+
+            // Save the new answer state
+            userAnswers[currentQuestionIndex] = {
+                selectedIndex,
+                isCorrect: isCurrentAnswerCorrect
+            };
+
+            // Update UI
+            Array.from(answerOptions.children).forEach(button => {
+                if (parseInt(button.dataset.index) === selectedIndex) {
+                    button.classList.add(isCurrentAnswerCorrect ? 'correct' : 'incorrect');
+                } else if (currentQuestion.options[parseInt(button.dataset.index)].isCorrect) {
+                    button.classList.add('correct');
+                }
+            });
+
+            if (isCurrentAnswerCorrect) {
+                feedbackArea.innerHTML = `<p class="text-green-600 font-semibold">Correct!</p>`;
+            } else {
+                feedbackArea.innerHTML = `
+                    <p class="text-red-600 font-semibold">Incorrect.</p>
+                    <p class="mt-2 text-gray-700"><strong>Rationale:</strong> ${selectedOption.rationale}</p>
+                `;
+            }
+
+            scoreCounter.textContent = `Score: ${score}`;
+        }
+
+        function updateNavigationButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            nextBtn.textContent = currentQuestionIndex === quizData.length - 1 ? 'Finish Quiz' : 'Next';
+        }
+
+        function showResults() {
+            quizContent.classList.add('hidden');
+            quizResults.classList.remove('hidden');
+            finalScore.textContent = `${score} / ${quizData.length}`;
+            if (score === quizData.length) {
+                resultsMessage.textContent = 'Excellent! You are a master of tenses!';
+            } else if (score > quizData.length / 2) {
+                resultsMessage.textContent = 'Good job! You have a solid grasp, keep practicing!';
+            } else {
+                resultsMessage.textContent = 'You can do better! Review the explorer and try again.';
+            }
+        }
+
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < quizData.length - 1) {
+                currentQuestionIndex++;
+                renderQuiz();
+            } else {
+                showResults();
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuiz();
+            }
+        });
+
+        restartQuizBtn.addEventListener('click', startQuiz);
+
+        // Flashcard Functions
+        function startFlashcards() {
+            generateFlashcards();
+            flashcardIndex = 0;
+            renderFlashcard();
+        }
+
+        function renderFlashcard() {
+            const cardData = allFlashcards[flashcardIndex];
+
+            // Reset card flip
+            flashcardElement.classList.remove('flipped');
+            flashcardBack.innerHTML = ''; // Clear previous content
+
+            if (cardData.type === 'basic') {
+                flashcardFront.textContent = cardData.data.name;
+                flashcardBack.innerHTML = `
+                    <h4 class="text-xl font-bold">${cardData.data.name}</h4>
+                    <p class="mt-4 text-sm"><strong class="font-semibold text-gray-700">Use:</strong> ${cardData.data.use}</p>
+                    <p class="mt-2 text-sm"><strong class="font-semibold text-gray-700">Structure:</strong> <code class="bg-gray-100 p-1 rounded text-xs">${cardData.data.structure}</code></p>
+                    <p class="mt-2 text-sm"><strong class="font-semibold text-gray-700">Keywords:</strong> <code class="bg-gray-100 p-1 rounded text-xs">${cardData.data.keywords}</code></p>
+                `;
+            } else if (cardData.type === 'exampleToTense' || cardData.type === 'structureToTense' || cardData.type === 'usageToTense') {
+                flashcardFront.textContent = cardData.question;
+                flashcardBack.innerHTML = `<h4 class="text-xl font-bold">Answer: ${cardData.answer}</h4>`;
+            }
+        }
+
+        flipBtn.addEventListener('click', () => {
+            flashcardElement.classList.toggle('flipped');
+        });
+
+        nextFlashcardBtn.addEventListener('click', () => {
+            flashcardIndex++;
+            if (flashcardIndex >= allFlashcards.length) {
+                flashcardIndex = 0;
+                generateFlashcards(); // Reshuffle and regenerate when done
+            }
+            renderFlashcard();
+        });
+
+
+        setupExplorer();
+        startFlashcards(); // Start flashcards when the page loads.
+    });
+</script>
+</body>
+</html>
